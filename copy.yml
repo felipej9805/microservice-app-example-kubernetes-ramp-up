@@ -1,0 +1,100 @@
+version: "3"
+networks:
+  docker_network:
+    driver: bridge
+  es-net:
+    driver: bridge
+services:
+  frontend:
+    image: frontend
+    container_name: frontend
+    build: ./frontend
+    networks:
+        - docker_network
+    environment:
+      PORT: 8080
+      AUTH_API_ADDRESS: http://auth-api:8000
+      TODOS_API_ADDRESS: http://todos-api:8082
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    ports:
+      - 8080:8080
+    depends_on:
+      - zipkin
+      - auth-api
+      - todos-api
+      - users-api
+
+  auth-api:
+    build: ./auth-api
+    container_name: auth-api
+    networks:
+        - docker_network
+    image: auth-api
+    environment:
+      AUTH_API_PORT: 8000
+      JWT_SECRET: PRFT
+      USERS_API_ADDRESS: http://users-api:8083
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      - zipkin
+      - users-api
+
+  todos-api:
+    build: ./todos-api
+    container_name: todos-api
+    image: todos-api
+    networks:
+        - docker_network
+    environment:
+      TODO_API_PORT: 8082
+      JWT_SECRET: PRFT
+      REDIS_HOST: redis-db
+      REDIS_PORT: 6379
+      REDIS_CHANNEL: log_channel
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+    depends_on:
+      - zipkin
+      - redis-db
+
+  users-api:
+    build: ./users-api
+    container_name: users-api
+    networks:
+        - docker_network
+    image: users-api
+    environment:
+     SERVER_PORT: 8083
+     JWT_SECRET: PRFT
+     SPRING_ZIPKIN_BASE_URL: http://zipkin:9411
+    depends_on:
+      - zipkin
+     
+  log-message-processor:
+    container_name: log-message-processor
+    networks:
+        - docker_network
+    build: ./log-message-processor
+    image: log-message-processor
+    environment:
+      REDIS_HOST: redis-db
+      REDIS_PORT: 6379
+      REDIS_CHANNEL: log_channel
+      ZIPKIN_URL: http://zipkin:9411/api/v1/spans
+    depends_on:
+      - zipkin
+      - redis-db
+  
+  zipkin:
+    container_name: zipkin
+    networks:
+        - docker_network
+    image: openzipkin/zipkin
+    ports:
+      - 9411:9411
+
+  redis-db:
+    container_name: redis-db
+    networks:
+        - docker_network
+    image: redis:7.0
+
