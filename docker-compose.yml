@@ -1,12 +1,12 @@
 version: "3.2"
+######################## NETWORK ####################################################
 networks:
   docker_network:
     driver: bridge
-  es-net:
-    driver: bridge
+######################## FRONTEND ####################################################
 services:
   frontend:
-    image: frontend
+    image: 9805/frontend
     container_name: frontend
     build: ./frontend
     networks:
@@ -23,13 +23,15 @@ services:
       - auth-api
       - todos-api
       - users-api
-
+      - elastic
+      - kibana
+######################## AUTH-API ####################################################
   auth-api:
     build: ./auth-api
     container_name: auth-api
     networks:
         - docker_network
-    image: auth-api
+    image: 9805/auth-api
     environment:
       AUTH_API_PORT: 8000
       JWT_SECRET: PRFT
@@ -38,11 +40,13 @@ services:
     depends_on:
       - zipkin
       - users-api
-
+      - elastic
+      - kibana
+######################## TODOS-API ####################################################
   todos-api:
     build: ./todos-api
     container_name: todos-api
-    image: todos-api
+    image: 9805/todos-api
     networks:
         - docker_network
     environment:
@@ -55,26 +59,30 @@ services:
     depends_on:
       - zipkin
       - redis-db
-
+      - elastic
+      - kibana
+######################## USERS-API ####################################################
   users-api:
     build: ./users-api
     container_name: users-api
     networks:
         - docker_network
-    image: users-api
+    image: 9805/users-api
     environment:
      SERVER_PORT: 8083
      JWT_SECRET: PRFT
      SPRING_ZIPKIN_BASE_URL: http://zipkin:9411
     depends_on:
       - zipkin
-     
+      - elastic
+      - kibana
+######################## LOG-MESSAGE-PROCESSOR ####################################################     
   log-message-processor:
     container_name: log-message-processor
     networks:
         - docker_network
     build: ./log-message-processor
-    image: log-message-processor
+    image: 9805/log-message-processor
     environment:
       REDIS_HOST: redis-db
       REDIS_PORT: 6379
@@ -83,7 +91,9 @@ services:
     depends_on:
       - zipkin
       - redis-db
-  
+      - elastic
+      - kibana
+######################## ZIPKIN ####################################################  
   zipkin:
     container_name: zipkin
     networks:
@@ -91,36 +101,35 @@ services:
     image: openzipkin/zipkin
     ports:
       - 9411:9411
-
+    depends_on:
+      - elastic
+      - kibana
+######################## REDIS-DB ####################################################
   redis-db:
     container_name: redis-db
     networks:
         - docker_network
     image: redis:7.0
-
+    depends_on:
+      - elastic
+      - kibana
+######################## ELASTIC ################## ******************* #########################################################################################################
   elastic:
     container_name: elastic
-    image: elasticsearch:7.16.2
+    image: elasticsearch:7.17.0
     environment:
-      xpack.security.enabled: "false"
-      xpack.monitoring.enabled: "true"
-      xpack.monitoring.collection.enabled: "true"
-      xpack.monitoring.elasticsearch.collection.enabled: "true"
-      xpack.monitoring.exporters.my_local.type: local
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
       discovery.type: single-node
     volumes:
     - elastic_data:/usr/share/elasticsearch/data/
     networks:
         - docker_network
-        - es-net
     restart: always
     ports:
       - 9200:9200
       - 9300:9300
-
+######################## KIBANA ####################################################
   kibana:
-    image: kibana:7.16.2
+    image: kibana:7.17.0
     container_name: kibana
     environment:
       xpack.monitoring.ui.enabled: "true"
@@ -128,29 +137,46 @@ services:
       xpack.monitoring.elasticsearch.hosts: http://elastic:9200
       logging.verbose: "true"
       ELASTICSEARCH_HOSTS: http://elastic:9200
+    healthcheck:
+        test: ["CMD", "curl", "-f", "kibana:5601"]
+        interval: 50s
+        timeout: 50s
+        retries: 5
     networks:
         - docker_network
-        - es-net
     ports:
       - 5601:5601
     depends_on:
       - elastic
-
-
+######################## LOGSTASH ####################################################
   logstash:
     container_name: logstash
     image: logstash:7.9.2
     ports:
-      - '5000:5000'
+      - '5400:5400'
     networks:
         - docker_network
-        - es-net
     volumes:
-      - type: "bind"
-        source: ./logstash_pipeline/
-        target: /usr/share/logstash/pipeline
-        read_only: true
-
+        - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro 
+        - ./logstash/logstash.yaml:/usr/share/logstash/config/logstash.yml:ro
+    depends_on:
+      - kibana
+######################## FILEBEAT ####################################################
+  filebeat:
+      user: root
+      container_name: filebeat
+      command: --strict.perms=false
+      volumes:
+          - ./filebeat/filebeat.docker.yaml:/usr/share/filebeat/filebeat.yml:ro
+          - /var/lib/docker/containers:/var/lib/docker/containers:ro
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+      #   - /home/lian/ELK/1 Introduction and Installation/dockerComposeJavaApp/data:/usr/share/filebeat/data:rw
+      image: docker.elastic.co/beats/filebeat:7.17.0
+      depends_on:   
+          - kibana
+      networks:
+          - docker_network  
+######################## VOLUMES ####################################################
 volumes:
   elastic_data:
 
