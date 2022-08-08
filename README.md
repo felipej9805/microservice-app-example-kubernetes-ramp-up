@@ -10,6 +10,7 @@ In each folder you can find a more in-depth explanation of each component:
 3. [TODOs API](/todos-api) is a NodeJS application, provides CRUD functionality over user's TODO records. Also, it logs "create" and "delete" operations to [Redis](https://redis.io/) queue.
 4. [Log Message Processor](/log-message-processor) is a queue processor written in Python. Its purpose is to read messages from a Redis queue and print them to standard output.
 5. [Frontend](/frontend) Vue application, provides UI.
+6. Zipkin. Optional 3rd party system that aggregates traces produced by other components.
 
 ## Architecture
 
