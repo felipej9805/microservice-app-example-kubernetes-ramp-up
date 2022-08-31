@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-api
+  labels:
+    app: auth-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-api
+  template:
+    metadata:
+      labels:
+        app: auth-api
+    spec:
+      containers:
+        - env:
+            - name: AUTH_API_PORT
+              value: "8000"
+            - name: JWT_SECRET
+              value: PRFT
+            - name: USERS_API_ADDRESS
+              value: http://users-api:8083
+            - name: ZIPKIN_URL
+              value: http://zipkin:9411/api/v2/spans
+          image: 9805/auth-api
+          name: auth-api
+      restartPolicy: Always
+---
+kind: Service
+metadata:
+  name: auth-api-service
+  labels:
+    app: auth-api
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  selector:
+    auth-api: auth-api
