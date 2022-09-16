@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: log-message-processor
+  name: log-message-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-message-processor
+  template:
+    metadata:
+      labels:
+        app: log-message-processor
+    spec:
+      containers:
+        - env:
+            - name: REDIS_CHANNEL
+              value: log_channel
+            - name: REDIS_HOST
+              value: redis-db-svc.default.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: ZIPKIN_URL
+              value: http://zipkin-svc.default.svc.cluster.local:9411/api/v2/spans
+          image: 9805/log-message-processor
+          name: log-message-processor
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.2"
