@@ -21,13 +21,13 @@ spec:
             - name: REDIS_CHANNEL
               value: log_channel
             - name: REDIS_HOST
-              value: redis-db-svc.default.svc.cluster.local
+              value: redis-db-svc.microservices.svc.cluster.local
             - name: REDIS_PORT
               value: "6379"
             - name: TODO_API_PORT
               value: "8082"
             - name: ZIPKIN_URL
-              value: http://zipkin-svc.default.svc.cluster.local:9411/api/v2/spans
+              value: http://zipkin-svc.microservices.svc.cluster.local:9411/api/v2/spans
           image: 9805/todos-api
           name: todos-api
           resources:
