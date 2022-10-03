@@ -17,13 +17,13 @@ spec:
       containers:
         - env:
             - name: AUTH_API_ADDRESS
-              value: http://auth-api-svc.default.svc.cluster.local:8000
+              value: http://auth-api-svc.microservices.svc.cluster.local:8000
             - name: PORT
               value: "8080"
             - name: TODOS_API_ADDRESS
-              value: http://todos-api-svc.default.svc.cluster.local:8082
+              value: http://todos-api-svc.microservices.svc.cluster.local:8082
             - name: ZIPKIN_URL
-              value: http://zipkin-svc.default.svc.cluster.local:9411/api/v2/spans
+              value: http://zipkin-svc.microservices.svc.cluster.local:9411/api/v2/spans
           image: 9805/frontend
           name: frontend
           resources:

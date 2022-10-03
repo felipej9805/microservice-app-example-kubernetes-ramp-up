@@ -21,9 +21,9 @@ spec:
             - name: JWT_SECRET
               value: PRFT
             - name: USERS_API_ADDRESS
-              value: http://users-api-svc.default.svc.cluster.local:8083
+              value: http://users-api-svc.microservices.svc.cluster.local:8083
             - name: ZIPKIN_URL
-              value: http://zipkin-svc.default.svc.cluster.local:9411/api/v2/spans
+              value: http://zipkin-svc.microservices.svc.cluster.local:9411/api/v2/spans
           image: 9805/auth-api
           name: auth-api
           resources:

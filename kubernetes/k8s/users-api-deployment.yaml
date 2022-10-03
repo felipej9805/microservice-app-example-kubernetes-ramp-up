@@ -21,7 +21,7 @@ spec:
             - name: SERVER_PORT
               value: "8083"
             - name: SPRING_ZIPKIN_BASE_URL
-              value: http://zipkin-svc.default.svc.cluster.local:9411/api/v2/spans
+              value: http://zipkin-svc.microservices.svc.cluster.local:9411/api/v2/spans
           image: 9805/users-api
           name: users-api
           resources:
